@@ -2,6 +2,7 @@
  * server.js (CommonJS)
  ***********************/
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // <-- добавили
 const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
