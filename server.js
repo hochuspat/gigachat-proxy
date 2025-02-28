@@ -14,9 +14,9 @@ const app = express();
 
 // Настройка CORS для разрешения запросов с вашего клиентского домена
 app.use(cors({
-  origin: 'https://stage-app53169536-248ef1e78cc8.pages.vk-apps.com', // Разрешаем только ваш домен
-  methods: ['GET', 'POST', 'OPTIONS'], // Разрешаем методы
-  allowedHeaders: ['Content-Type', 'Authorization'], // Разрешаем заголовки
+  origin: 'https://stage-app53169536-248ef1e78cc8.pages.vk-apps.com',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json());
@@ -118,7 +118,8 @@ app.post('/call', async (req, res) => {
   }
 });
 
+// Слушаем на 0.0.0.0, чтобы Railway мог подключиться
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`GigaChat proxy server started on port ${PORT}`);
 });
