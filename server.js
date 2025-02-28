@@ -21,6 +21,11 @@ app.use(cors({
 
 app.use(express.json());
 
+// Добавим healthcheck для Railway
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 const GIGACHAT_AUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
 const GIGACHAT_API_URL = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions";
 const AUTHORIZATION_KEY = "MWJmMWU3ZDQtYTQ0NS00NGFjLTg1OGEtNGFjYmIyNjcxN2Y5OmJhYjhlYTVhLWYwMmUtNGEyOC04NjUzLTQ3MTA3OTE3YmFmMA==";
@@ -118,8 +123,8 @@ app.post('/call', async (req, res) => {
   }
 });
 
-// Слушаем на 0.0.0.0, чтобы Railway мог подключиться
-const PORT = process.env.PORT || 3000;
+// Слушаем на порту, который указывает Railway
+const PORT = process.env.PORT; // Убираем дефолтное значение 3000
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`GigaChat proxy server started on port ${PORT}`);
 });
