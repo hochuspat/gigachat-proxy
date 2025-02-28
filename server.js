@@ -6,7 +6,7 @@ import cors from 'cors';
 
  GIGACHAT_AUTH_URL=https://ngw.devices.sberbank.ru:9443/api/v2/oauth
  GIGACHAT_API_URL=https://gigachat.devices.sberbank.ru/api/v1/chat/completions
- GIGACHAT_AUTH_KEY=Base64_ВашКлюч
+ GIGACHAT_AUTH_KEY=MWJmMWU3ZDQtYTQ0NS00NGFjLTg1OGEtNGFjYmIyNjcxN2Y5OmJhYjhlYTVhLWYwMmUtNGEyOC04NjUzLTQ3MTA3OTE3YmFmMA==
 
 
 // Если Railway не поддерживает ES-модули, перейдите на CommonJS:
