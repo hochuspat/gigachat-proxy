@@ -11,7 +11,7 @@ const cors = require('cors');
  */
 const GIGACHAT_AUTH_URL = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
 const GIGACHAT_API_URL = 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions';
-const GIGACHAT_AUTH_KEY = 'Base64_ВашКлюч'; // <-- Укажите ваш реальный Base64-ключ
+const GIGACHAT_AUTH_KEY = 'MWJmMWU3ZDQtYTQ0NS00NGFjLTg1OGEtNGFjYmIyNjcxN2Y5OmJhYjhlYTVhLWYwMmUtNGEyOC04NjUzLTQ3MTA3OTE3YmFmMA=='; // <-- Укажите ваш реальный Base64-ключ
 const PORT = 3000; // Можно изменить при необходимости
 
 // Создаём Express-приложение
