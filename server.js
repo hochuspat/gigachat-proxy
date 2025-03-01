@@ -12,9 +12,9 @@ const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 
-// Настройка CORS для разрешения запросов с вашего клиентского домена
+// Настройка CORS для разрешения запросов с нового клиентского домена
 app.use(cors({
-  origin: 'https://stage-app53169536-248ef1e78cc8.pages.vk-apps.com',
+  origin: 'https://stage-app53169536-9503cfdaf67b.pages.vk-apps.com',
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   preflightContinue: false,
@@ -22,6 +22,14 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+// Логирование всех входящих запросов
+app.use((req, res, next) => {
+  console.log(`Получен запрос: ${req.method} ${req.url} от ${req.headers.origin}`);
+  console.log('Заголовки:', req.headers);
+  console.log('Тело запроса:', req.body);
+  next();
+});
 
 // Добавим healthcheck для Railway
 app.get('/health', (req, res) => {
@@ -32,7 +40,7 @@ const GIGACHAT_AUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
 const GIGACHAT_API_URL = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions";
 const AUTHORIZATION_KEY = "MWJmMWU3ZDQtYTQ0NS00NGFjLTg1OGEtNGFjYmIyNjcxN2Y5OmJhYjhlYTVhLWYwMmUtNGEyOC04NjUzLTQ3MTA3OTE3YmFmMA==";
 
-// Функция для получения токена доступа от GigaChat API (перемещена из Python-кода)
+// Функция для получения токена доступа от GigaChat API
 async function getAccessToken() {
   try {
     console.log("Запрос токена доступа от GigaChat API...");
