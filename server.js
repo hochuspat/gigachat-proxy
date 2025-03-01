@@ -3,7 +3,7 @@
  ***********************/
 
 // Отключаем проверку SSL-сертификата (как verify=False в Python).
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Оставляем временно, но лучше заменить на https.Agent
 
 const express = require('express');
 const fetch = require('node-fetch');
@@ -42,19 +42,21 @@ app.post('/auth', async (req, res) => {
     const params = new URLSearchParams();
     params.append('scope', 'GIGACHAT_API_PERS');
 
+    console.log('Отправка запроса к GigaChat API для получения токена:', { headers, params: params.toString() });
     const response = await fetch(GIGACHAT_AUTH_URL, {
       method: 'POST',
       headers,
       body: params.toString(),
     });
 
+    const responseText = await response.text();
+    console.log('Ответ от GigaChat API (/auth):', response.status, responseText);
+
     if (!response.ok) {
-      const text = await response.text();
-      console.error('Ошибка при получении токена:', response.status, text);
-      return res.status(response.status).json({ error: text });
+      return res.status(response.status).json({ error: responseText });
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
     return res.json(data);
   } catch (err) {
     console.error('Ошибка /auth:', err);
@@ -66,6 +68,7 @@ app.post('/call', async (req, res) => {
   try {
     const { token, text } = req.body;
     if (!token || !text) {
+      console.error('Отсутствуют обязательные поля:', { token, text });
       return res.status(400).json({ error: "Нужно передать token и text" });
     }
 
@@ -75,24 +78,12 @@ app.post('/call', async (req, res) => {
       'Accept': 'application/json',
     };
 
-    const prompt = `
-      Ты помощник, который извлекает данные для создания задачи из текста. Верни JSON с полями: 
-      - text (строка, текст задачи),
-      - deadline (строка в формате ISO или "undefined"),
-      - priority ("low", "medium", "high"),
-      - category ("Работа", "Личное", "Учёба" или "undefined").
-      Если дедлайн указан как "завтра", установи его на завтрашнюю дату в формате ISO. 
-      Если приоритет не указан, установи "medium". 
-      Если категория не указана, установи "undefined".
-      Текст: "${text}"
-    `;
-
     const body = {
       model: "GigaChat",
       messages: [
         {
           role: "system",
-          content: prompt,
+          content: text, // Используем текст клиента напрямую, так как клиент уже сформировал промпт
         },
         {
           role: "user",
@@ -103,19 +94,21 @@ app.post('/call', async (req, res) => {
       max_tokens: 200,
     };
 
+    console.log('Отправка запроса к GigaChat API (/call):', body);
     const response = await fetch(GIGACHAT_API_URL, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
     });
 
+    const responseText = await response.text();
+    console.log('Ответ от GigaChat API (/call):', response.status, responseText);
+
     if (!response.ok) {
-      const textErr = await response.text();
-      console.error('Ошибка при вызове GigaChat:', response.status, textErr);
-      return res.status(response.status).json({ error: textErr });
+      return res.status(response.status).json({ error: responseText });
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
     return res.json(data);
   } catch (err) {
     console.error('Ошибка /call:', err);
@@ -123,8 +116,7 @@ app.post('/call', async (req, res) => {
   }
 });
 
-// Слушаем на порту, который указывает Railway
-const PORT = process.env.PORT; // Убираем дефолтное значение 3000
+const PORT = process.env.PORT;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`GigaChat proxy server started on port ${PORT}`);
 });
