@@ -3,7 +3,7 @@
  ***********************/
 
 // Отключаем проверку SSL-сертификата (как verify=False в Python).
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Оставляем временно, но лучше заменить на https.Agent
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Оставляем временно
 
 const express = require('express');
 const fetch = require('node-fetch');
@@ -17,6 +17,8 @@ app.use(cors({
   origin: 'https://stage-app53169536-248ef1e78cc8.pages.vk-apps.com',
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
 }));
 
 app.use(express.json());
@@ -83,7 +85,7 @@ app.post('/call', async (req, res) => {
       messages: [
         {
           role: "system",
-          content: text, // Используем текст клиента напрямую, так как клиент уже сформировал промпт
+          content: text, // Используем текст клиента напрямую
         },
         {
           role: "user",
