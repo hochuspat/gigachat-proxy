@@ -32,19 +32,19 @@ const GIGACHAT_AUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
 const GIGACHAT_API_URL = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions";
 const AUTHORIZATION_KEY = "MWJmMWU3ZDQtYTQ0NS00NGFjLTg1OGEtNGFjYmIyNjcxN2Y5OmJhYjhlYTVhLWYwMmUtNGEyOC04NjUzLTQ3MTA3OTE3YmFmMA==";
 
-app.post('/auth', async (req, res) => {
+// Функция для получения токена доступа от GigaChat API (перемещена из Python-кода)
+async function getAccessToken() {
   try {
+    console.log("Запрос токена доступа от GigaChat API...");
     const headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
       'Accept': 'application/json',
       'RqUID': uuidv4(),
       'Authorization': `Basic ${AUTHORIZATION_KEY}`,
     };
-
     const params = new URLSearchParams();
     params.append('scope', 'GIGACHAT_API_PERS');
 
-    console.log('Отправка запроса к GigaChat API для получения токена:', { headers, params: params.toString() });
     const response = await fetch(GIGACHAT_AUTH_URL, {
       method: 'POST',
       headers,
@@ -52,27 +52,62 @@ app.post('/auth', async (req, res) => {
     });
 
     const responseText = await response.text();
-    console.log('Ответ от GigaChat API (/auth):', response.status, responseText);
+    console.log('Ответ на запрос токена:', response.status, responseText);
 
-    if (!response.ok) {
-      return res.status(response.status).json({ error: responseText });
+    if (response.status === 200) {
+      const data = JSON.parse(responseText);
+      const token = data.access_token;
+      if (token) {
+        console.log("Токен успешно получен.");
+        return token;
+      } else {
+        console.error("Токен не найден в ответе.");
+        return null;
+      }
+    } else {
+      console.error(`Ошибка при получении токена: ${response.status}`);
+      return null;
     }
-
-    const data = JSON.parse(responseText);
-    return res.json(data);
   } catch (err) {
-    console.error('Ошибка /auth:', err);
-    return res.status(500).json({ error: String(err) });
+    console.error("Ошибка запроса к GigaChat API:", err);
+    return null;
   }
-});
+}
 
-app.post('/call', async (req, res) => {
+// Эндпоинт /process-text
+app.post('/process-text', async (req, res) => {
   try {
-    const { token, text } = req.body;
-    if (!token || !text) {
-      console.error('Отсутствуют обязательные поля:', { token, text });
-      return res.status(400).json({ error: "Нужно передать token и text" });
+    const { text } = req.body;
+    if (!text) {
+      console.error('Отсутствует обязательное поле:', { text });
+      return res.status(400).json({ error: "Нужно передать text" });
     }
+
+    // Получаем токен на сервере
+    const token = await getAccessToken();
+    if (!token) {
+      console.error('Не удалось получить токен GigaChat.');
+      return res.status(500).json({ error: "Не удалось получить токен GigaChat" });
+    }
+
+    // Формируем промпт на сервере
+    const prompt = `
+Верни JSON (строго без лишних пояснений, только JSON-объект, никаких дополнительных слов) в формате:
+{
+  "title": "",
+  "description": "",
+  "deadline": "",
+  "time": "",
+  "priority": "",
+  "category": ""
+}
+Если дедлайн указан как "завтра", установи его на завтрашнюю дату в формате ISO (например, "2025-03-02T00:00:00.000Z").
+Если дедлайн указан как "сегодня", установи его на сегодняшнюю дату в формате ISO.
+Если приоритет не указан, установи "medium".
+Если категория не указана, установи пустую строку.
+Если поле не указано или не может быть определено, оставь его пустым ("").
+Текст пользователя: "${text}"
+    `.trim();
 
     const headers = {
       'Authorization': `Bearer ${token}`,
@@ -85,7 +120,7 @@ app.post('/call', async (req, res) => {
       messages: [
         {
           role: "system",
-          content: text, // Используем текст клиента напрямую
+          content: prompt,
         },
         {
           role: "user",
@@ -111,9 +146,15 @@ app.post('/call', async (req, res) => {
     }
 
     const data = JSON.parse(responseText);
-    return res.json(data);
+    const message = data?.choices?.[0]?.message?.content || '';
+    try {
+      const result = JSON.parse(message);
+      return res.json(result);
+    } catch (err) {
+      return res.status(500).json({ error: 'Ответ GigaChat не в формате JSON: ' + message });
+    }
   } catch (err) {
-    console.error('Ошибка /call:', err);
+    console.error('Ошибка /process-text:', err);
     return res.status(500).json({ error: String(err) });
   }
 });
